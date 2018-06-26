@@ -106,19 +106,34 @@ void setup()
   Serial.begin(115200);
   //  display.init();
   //  display.flipScreenVertically();
-  WiFiManager wifi;   //WiFiManager intialization.
-  wifi.autoConnect("Kitchen"); //Create AP, if necessary
+  WiFiManager wifiManager;
+  //sets timeout until configuration portal gets turned off
+  //useful to make it all retry or go to sleep
+  //in seconds
+  wifiManager.setTimeout(80);
+
+  //fetches ssid and pass and tries to connect
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP"
+  //and goes into a blocking loop awaiting configuration
+  if (!wifiManager.autoConnect("Kitchen")) {
+    Serial.println("failed to connect and hit timeout");
+    delay(3000);
+    //reset and try again, or maybe put it to deep sleep
+    ESP.reset();
+    delay(5000);
+  }
 
   wemoManager.begin();
   // Format: Alexa invocation name, local port no, on callback, off callback
-  KitchenLight = new WemoSwitch("Kitchen Light", 95,  lightOneOff,lightOneOn);
+  KitchenLight = new WemoSwitch("Kitchen Light", 95,  lightOneOff, lightOneOn);
   KitchenMini = new WemoSwitch("Kithchen Mini Light", 96, lightTwoOff, lightTwoOn);
   Balcony = new WemoSwitch("Balcony Light", 97, lightThreeOff, lightThreeOn);
- 
+
   wemoManager.addDevice(*KitchenLight);
   wemoManager.addDevice(*KitchenMini);
   wemoManager.addDevice(*Balcony);
-  
+
 
   pinMode(LightPin1, OUTPUT);
   pinMode(LightPin2, OUTPUT);
@@ -153,16 +168,7 @@ void loop()
 {
 
   wemoManager.serverLoop();
-  if (Blynk.connected()) {
-    Blynk.run();
-  }
-  else if (!Blynk.connected()) {
-    ButtonCheck();
-    ButtonCheck1();
-    ButtonCheck2();
-    ButtonCheck3();
-
-  }
+  Blynk.run();
   ArduinoOTA.handle();
   timer.run();
 }
@@ -403,7 +409,7 @@ void CheckConnection() {
     Serial.println("Not connected to Blynk server");
     if (WiFi.status() == WL_CONNECTED)
     {
-      
+
       Blynk.connect();
     }
     else {
@@ -412,3 +418,15 @@ void CheckConnection() {
   }
 }
 
+
+BLYNK_CONNECTED() {
+  // Request Blynk server to re-send latest values for all pins
+  Blynk.syncAll();
+
+  // You can also update individual virtual pins like this:
+  //Blynk.syncVirtual(V0, V2);
+
+  // Let's write your hardware uptime to Virtual Pin 2
+  int value = millis() / 1000;
+  Blynk.virtualWrite(V12, value);
+}
