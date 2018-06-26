@@ -79,9 +79,23 @@ char auth[] = "d64e6c5f53614f8db945c41a369c8b25";
 BlynkTimer timer;
 void setup()
 {
-  Serial.begin(115200);
-  WiFiManager wifi;   //WiFiManager intialization.
-  wifi.autoConnect("Dining Room"); //Create AP, if necessary
+  Serial.begin(115200); WiFiManager wifiManager;
+  //sets timeout until configuration portal gets turned off
+  //useful to make it all retry or go to sleep
+  //in seconds
+  wifiManager.setTimeout(80);
+
+  //fetches ssid and pass and tries to connect
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP"
+  //and goes into a blocking loop awaiting configuration
+  if (!wifiManager.autoConnect("Dining Hall")) {
+    Serial.println("failed to connect and hit timeout");
+    delay(3000);
+    //reset and try again, or maybe put it to deep sleep
+    ESP.reset();
+    delay(5000);
+  }
 
   //Set relay pins to outputs
   pinMode(relayOne, OUTPUT);
@@ -111,10 +125,10 @@ void setup()
     wemoManager.begin();
     // Define your switches here. Max 14
     // Format: Alexa invocation name, local port no, on callback, off callback
-    lightOne = new WemoSwitch("Dining Hall Light", 98,lightOneOff, lightOneOn );
+    lightOne = new WemoSwitch("Dining Hall Light", 98, lightOneOff, lightOneOn );
     lightTwo = new WemoSwitch("Dining Hall Fan", 99, lightTwoOff, lightTwoOn);
     lightThree = new WemoSwitch("Dining Hall Bedlamp", 100, lightThreeOff, lightThreeOn);
-   // lightFour = new WemoSwitch("Paint light", 87, lightFourOff, lightFourOn);
+    // lightFour = new WemoSwitch("Paint light", 87, lightFourOff, lightFourOn);
     wemoManager.addDevice(*lightOne);
     wemoManager.addDevice(*lightTwo);
     wemoManager.addDevice(*lightThree);
@@ -130,29 +144,20 @@ void setup()
       switchThreeCheck();
       switchFourCheck();
     }
-    delay(100);
-    Blynk.syncVirtual(V1);
-    Blynk.syncVirtual(V2);
-    Blynk.syncVirtual(V3);
-    Blynk.syncVirtual(V4);
-
     ArduinoOTA.setHostname("Dining Room");
     ArduinoOTA.begin();
+    timer.setInterval(100L, switchOneCheck);
+    timer.setInterval(100L, switchTwoCheck);
+    timer.setInterval(100L, switchThreeCheck);
+    timer.setInterval(100L, switchFourCheck);
+    timer.setInterval(11000L, CheckConnection);
   }
 }
 
 void loop()
 {
   wemoManager.serverLoop();
-  
-  if (Blynk.connected()) {
-    Blynk.run();
-  }
-  switchOneCheck();
-  switchTwoCheck();
-  switchThreeCheck();
-  switchFourCheck();
-  timer.setInterval(11000L, CheckConnection);
+  Blynk.run();
   ArduinoOTA.handle();
   timer.run();
 }
@@ -326,4 +331,17 @@ void CheckConnection() {
       Serial.println("Still connected to Blynk server");
     }
   }
+}
+
+
+BLYNK_CONNECTED() {
+  // Request Blynk server to re-send latest values for all pins
+  Blynk.syncAll();
+
+  // You can also update individual virtual pins like this:
+  //Blynk.syncVirtual(V0, V2);
+
+  // Let's write your hardware uptime to Virtual Pin 2
+  int value = millis() / 1000;
+  Blynk.virtualWrite(V12, value);
 }
