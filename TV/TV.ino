@@ -31,8 +31,8 @@ void lightOneOff();
 
 
 // Change this before you flash
-const char* ssid = "Gannavarapu";
-const char* password = "Sravani1";
+const char* ssid = "****";
+const char* password = "***";
 
 boolean wifiConnected = false;
 
