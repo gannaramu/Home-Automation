@@ -53,7 +53,7 @@
 #define VPIN2 V3  //Use a unique virtual pin for each device using the same token / dashboard
 #define VPIN3 V4  //Use a unique virtual pin for each device using the same token / dashboard
 
-char auth[] = "548aa0f4b76b4a018696e18af74c61dd"; //Get token from Blynk Bedroom1:  548aa0f4b76b4a018696e18af74c61dd
+char auth[] = "**"; //Get token from Blynk Bedroom1:  548aa0f4b76b4a018696e18af74c61dd
 #define DHTPIN D4       // What digital pin we're connected to
 #define DHTTYPE DHT11     // DHT 11
 int localHum = 0;
@@ -104,8 +104,8 @@ WemoSwitch *BedroomFan = NULL;
 WemoSwitch *Bedlamp = NULL;
 WemoSwitch *Radio = NULL;
 
-const char* ssid = "Gannavarapu";
-const char* password = "Sravani1";
+const char* ssid = "***";
+const char* password = "***";
 
 void setup()
 {
